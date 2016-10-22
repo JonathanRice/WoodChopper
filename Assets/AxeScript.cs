@@ -12,13 +12,19 @@ public class AxeScript : MonoBehaviour
     private GUIStyle lostStyle = new GUIStyle();
     private GUIStyle scoreStyle = new GUIStyle();
     private int fontBooster = 1;
-    private double randomBooster = 0.5;
-    private double timeToClick = 2.0;
-    private double minTimeToClick = 0.3;
-    private double timeDecrement = 0.1;
+    private float randomBooster = 0.25f;
+    private float timeToClick = 2.0f;
+    private float minTimeToClick = 0.5f;
+    private float timeDecrement = 0.1f;
+
+    public float barDisplay = 0.5f; //current progress
+    public Vector2 pos = new Vector2(20, 40);
+    private Vector2 size = new Vector2(Screen.width - 40, 20);
+    public Texture2D emptyTex;
+    public Texture2D fullTex;
 
     // Use this for initialization
-    void Start ()
+    void Start()
     {
         GameObject.Find("DolphinLeft").GetComponent<SpriteRenderer>().enabled = false;
         GameObject.Find("DolphinRight").GetComponent<SpriteRenderer>().enabled = false;
@@ -41,15 +47,28 @@ public class AxeScript : MonoBehaviour
     {
         if (lost)
         {
-            GUI.Label(new Rect(Screen.width/2 - 200, Screen.height/2 - 25, 100, 90), "You lost!", lostStyle);
+            GUI.Label(new Rect(Screen.width / 2 - 200, Screen.height / 2 - 25, 100, 90), "You lost!", lostStyle);
         }
         else
         {
-            GUI.Label(new Rect(Screen.width / 2 - 200, Screen.height - 100, 100, 90), 
-                "Scofffffre: " + score + 
-                " Time: " + (Time.time - timeLastClicked) + 
+            GUI.Label(new Rect(Screen.width / 2 - 200, Screen.height - 100, 100, 90),
+                "Score: " + score + "\n" +
+                " Time: " + (Time.time - timeLastClicked) + "\n" +
                 " ToClick: " + timeToClick, scoreStyle);
         }
+        GUI.BeginGroup(new Rect(pos.x, pos.y, size.x, size.y));
+        GUI.Box(new Rect(0, 0, size.x, size.y), emptyTex);
+
+        //draw the filled-in part:
+        barDisplay = (Time.time - timeLastClicked) / timeToClick;
+        if (chopping || !active)
+        {
+            barDisplay = 0.0f;
+        }
+        GUI.BeginGroup(new Rect(0, 0, size.x * barDisplay, size.y));
+        GUI.Box(new Rect(0, 0, size.x, size.y), fullTex);
+        GUI.EndGroup();
+        GUI.EndGroup();
     }
 
     IEnumerator Lost()
@@ -61,12 +80,13 @@ public class AxeScript : MonoBehaviour
         yield return new WaitForSeconds(3);
         EnableLog();
         lost = false;
-        timeToClick = 2.0;
+        timeToClick = 2.0f;
         timeLastClicked = Time.time;
     }
 
     IEnumerator ChopEnded()
     {
+        chopping = true;
         DisableAll();
         yield return new WaitForSeconds(1);
         EnableOne();
@@ -80,8 +100,8 @@ public class AxeScript : MonoBehaviour
         StartCoroutine("ChopEnded");
     }
 
-	// Update is called once per frame
-	void Update ()
+    // Update is called once per frame
+    void Update()
     {
         //We have some problems, basically we need to go into this if when time is exceeded.
         // But we need to make sure time being exceeded only occurs during actual play, not during the animation frames, or lost reset frames
@@ -89,11 +109,7 @@ public class AxeScript : MonoBehaviour
         {
             if (isDolphinEnabled())
             {
-                //TODO win the round, we need to blank everything out for a second then start again
-                EnableLog();
-                ReduceTimeToClick();
-                timeLastClicked = Time.time;
-                chopping = false;
+                StartCoroutine("ChopEnded");
             }
             else
             {
@@ -104,7 +120,7 @@ public class AxeScript : MonoBehaviour
         if ((Input.GetMouseButtonDown(0) || Input.touchCount > 0) && !chopping && !lost)
         {
             chopping = true;
-            active = true;
+            ActivateGame();
             score++;
             timeLastClicked = Time.time;
             this.GetComponent<Animator>().Play("AxeAnim", 0);
@@ -145,17 +161,6 @@ public class AxeScript : MonoBehaviour
         {
             EnableDolphin();
         }
-        /*
-        randomBooster += Random.Range(-0.1f, 0.1f);
-        if (randomBooster < 0)
-        {
-            randomBooster = 0.1;
-        }
-        if (randomBooster > 1)
-        {
-            randomBooster = 0.9;
-        }
-        */
     }
 
     private void EnableDolphin()
@@ -186,5 +191,11 @@ public class AxeScript : MonoBehaviour
         {
             timeToClick = minTimeToClick;
         }
+    }
+
+    private void ActivateGame()
+    {
+        active = true;
+        GameObject.Find("WoodChopperText").GetComponent<SpriteRenderer>().enabled = false;
     }
 }
