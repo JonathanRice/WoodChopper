@@ -6,3 +6,5 @@ Build and run in unity 5.
 Available on Google Play store. See "WoodChopper" by Jonathan Rice.
 
 A simple game created so I could gain experience publishing.
+
+![Screenshot](/doc/Screenshot.png?raw=true "Screenshot")
